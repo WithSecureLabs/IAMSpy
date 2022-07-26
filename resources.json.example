@@ -1,0 +1,26 @@
+[
+    {
+        "Resource": "arn:aws:s3:::bucket_name",
+        "Policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "RequireSSL",
+                    "Effect": "Deny",
+                    "Principal": "*",
+                    "Action": "s3:*",
+                    "Resource": [
+                        "arn:aws:s3:::bucket_name/*",
+                        "arn:aws:s3:::bucket_name"
+                    ],
+                    "Condition": {
+                        "Bool": {
+                            "aws:SecureTransport": "false"
+                        }
+                    }
+                }
+            ]
+        },
+        "Account": "123456789012"
+    }
+]

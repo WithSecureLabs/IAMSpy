@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "iamspy"
+version = "0.1.0"
+description = ""
+authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+z3-solver = "*"
+pydantic = "*"
+typer = "*"
+python-dateutil = "^2.8.2"
+
+[tool.poetry.dev-dependencies]
+ipython = "*"
+black = "^22.3.0"
+pytest = "^7.1.1"
+pytest-cov = "^3.0.0"
+pdbpp = "^0.10.3"
+
+[tool.poetry.scripts]
+iamspy = 'iamspy.cli:app'
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
