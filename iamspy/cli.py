@@ -39,7 +39,6 @@ def can_i(
         False, help="Whether to require conditions to be passed in for any IAM condition checks"
     ),
     model: str = typer.Option("model.smt2", "-f"),
-    debug: bool = typer.Option(False, "--debug"),
 ):
     """
     Pulls out applicable policies, runs can_i
@@ -48,7 +47,7 @@ def can_i(
     if Path(model).is_file():
         m.load_model(model)
 
-    print(m.can_i(source_arn, action, resource, conditions, condition_file, strict_conditions, debug))
+    print(m.can_i(source_arn, action, resource, conditions, condition_file, strict_conditions))
 
 
 @app.callback()
