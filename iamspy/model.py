@@ -2,6 +2,7 @@ from typing import List, Optional, Set
 import logging
 import json
 import z3
+import hashlib
 from iamspy.iam import AuthorizationDetails, ResourcePolicy
 from iamspy import parse
 from iamspy.datatypes import parse_string
@@ -63,9 +64,31 @@ class Model:
 
     @property
     def model_vars(self):
+        # Try loading from file
+        if self._model_vars is None:
+            try:
+                with open("model.vars") as fs:
+                    data = fs.read()
+                    h, v = data.split("\n", 1)
+                    if h == self.hash:
+                        logger.info("Loading model vars from model.vars")
+                        self._model_vars = set(v.split("\n"))
+            except FileNotFoundError:
+                pass
+
+        # Re-generate the model vars
         if self._model_vars is None:
             self._model_vars = get_vars(list(self.solver.assertions()))
+            with open("model.vars", "w") as fs:
+                logger.info("Saving model vars to model.vars")
+                fs.write(self.hash + "\n")
+                fs.write("\n".join(list(self._model_vars)))
+
         return self._model_vars
+
+    @property
+    def hash(self):
+        return hashlib.md5(self.solver.to_smt2().encode()).hexdigest()
 
     def generate_evaluation_logic_checks(self, source, resource):
         """
