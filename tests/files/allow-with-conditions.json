@@ -1,0 +1,54 @@
+{
+  "UserDetailList": [
+  ],
+  "GroupDetailList": [
+  ],
+  "RoleDetailList": [
+    {
+      "Path": "/",
+      "RoleName": "name",
+      "RoleId": "AROAAAAAAAAAAAAAAAAAA",
+      "Arn": "arn:aws:iam::123456789012:role/name",
+      "CreateDate": "2019-12-12 12:55:41+00:00",
+      "AssumeRolePolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::123456789012:root"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "InstanceProfileList": [],
+      "RolePolicyList": [
+        {
+          "PolicyName": "policy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "lambda:InvokeFunction"
+                ],
+                "Resource": "*",
+                "Condition": {
+                    "StringLike": {"aws:referer": ["bobby.tables"]}
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "AttachedManagedPolicies": [],
+      "Tags": [
+      ],
+      "RoleLastUsed": {}
+    }
+  ],
+  "Policies": [
+  ]
+}

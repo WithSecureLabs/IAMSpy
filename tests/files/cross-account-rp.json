@@ -1,0 +1,18 @@
+[
+    {
+        "Resource": "arn:aws:lambda:eu-west-1:111111111111:function:helloworld",
+        "Policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "",
+                    "Effect": "Allow",
+                    "Principal": "arn:aws:iam::123456789012:root",
+                    "Action": "lambda:InvokeFunction",
+                    "Resource": "*"
+                }
+            ]
+        },
+        "Account": "111111111111"
+    }
+]
