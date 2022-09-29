@@ -1,0 +1,80 @@
+{
+  "UserDetailList": [
+  ],
+  "GroupDetailList": [
+  ],
+  "RoleDetailList": [
+    {
+      "Path": "/",
+      "RoleName": "testing",
+      "RoleId": "AROAAAAAAAAAAAAAAAAAA",
+      "Arn": "arn:aws:iam::111111111111:role/testing",
+      "CreateDate": "2019-12-12 12:55:41+00:00",
+      "AssumeRolePolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "TrustRelationship",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111111111111:root"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "InstanceProfileList": [],
+      "RolePolicyList": [
+      ],
+      "AttachedManagedPolicies": [],
+      "Tags": [
+      ],
+      "RoleLastUsed": {}
+    },
+    {
+      "Path": "/",
+      "RoleName": "testing2",
+      "RoleId": "AROAAAAAAAAAAAAAAAAAB",
+      "Arn": "arn:aws:iam::111111111111:role/testing2",
+      "CreateDate": "2019-12-12 12:55:41+00:00",
+      "AssumeRolePolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "TrustRelationship",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": "arn:aws:iam::111111111111:root"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      },
+      "InstanceProfileList": [],
+      "RolePolicyList": [
+        {
+          "PolicyName": "policy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "AllowS3",
+                "Effect": "Allow",
+                "Action": [
+                  "s3:*"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      ],
+      "AttachedManagedPolicies": [],
+      "Tags": [
+      ],
+      "RoleLastUsed": {}
+    }
+  ],
+  "Policies": [
+  ]
+}
