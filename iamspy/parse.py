@@ -360,6 +360,7 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     resource_identifier = f"resource_{resource}"
     resource_check = z3.Bool(resource_identifier)
     constraints.append(z3.Bool("resource") == resource_check)
+    constraints.append(z3.Bool(f"resource_{resource}_deny") == True)  # noqa: E712
     if resource.startswith("arn:aws:s3:::") and "/" in resource:
         bucket_resource = resource.split("/")[0]
         logger.info(f"Associating {bucket_resource} policy with bucket object {resource}")
@@ -378,6 +379,7 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     identity_identifier = f"identity_{source}"
     identity_check = z3.Bool(identity_identifier)
     constraints.append(z3.Bool("identity") == identity_check)
+    constraints.append(z3.Bool(f"identity_{source}_deny") == True)  # noqa: E712
     if identity_identifier not in model_vars:
         constraints.append(identity_check == False)  # noqa: E712
 

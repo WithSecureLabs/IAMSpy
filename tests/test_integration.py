@@ -85,6 +85,24 @@ import pytest
             ),
             True,
         ),
+        (
+            {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-allow-testing.json"]},
+            (
+                "arn:aws:iam::111111111111:role/testing",
+                "s3:ListBucket",
+                "arn:aws:s3:::bucket",
+            ),
+            True,
+        ),
+        (
+            {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-deny-testing2.json"]},
+            (
+                "arn:aws:iam::111111111111:role/testing2",
+                "s3:ListBucket",
+                "arn:aws:s3:::bucket",
+            ),
+            False,
+        ),
     ],
 )
 def test_all(files, inp, out):
