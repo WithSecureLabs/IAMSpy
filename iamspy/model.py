@@ -110,10 +110,11 @@ class Model:
 
         s, a, r = z3.Strings("s a r")
 
-        logger.debug(f"Adding constraint source is {source}")
+        if source != None:
+            logger.debug(f"Adding constraint source is {source}")
+            output.append(parse_string(s, source, wildcard=False))
         logger.debug(f"Adding constraint action is {action}")
         logger.debug(f"Adding constraint resource is {resource}")
-        output.append(parse_string(s, source, wildcard=False))
         output.append(parse_string(a, action, wildcard=False))
         output.append(parse_string(r, resource, wildcard=False))
 
@@ -174,3 +175,38 @@ class Model:
             solver.add(*query_conditions)
 
             return solver.check() == z3.sat
+
+
+    def who_can(
+        self,
+        action: str,
+        resource: str,
+        conditions: List[str] = [],
+        condition_file: Optional[str] = None,
+        strict_conditions: bool = False,
+    ) -> bool:
+        with self as solver:
+            logger.debug("Identifying model conditions")
+            model_conditions = get_conditions(self.model_vars)
+            logger.debug(f"Model conditions identified as: {model_conditions}")
+
+            query_conditions = self._generate_query_conditions(
+                source=None,
+                action=action,
+                resource=resource,
+                conditions=conditions,
+                condition_file=condition_file,
+                strict_conditions=strict_conditions,
+                model_conditions=model_conditions,
+            )
+            solver.add(*query_conditions)
+            sat = solver.check() == z3.sat
+            sources = []
+            while sat:
+                s = z3.String('s')
+                m = solver.model()
+                source = m[s]
+                sources.append(source)
+                solver.add(s != source)
+                sat = solver.check() == z3.sat
+            return sources

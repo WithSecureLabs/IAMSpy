@@ -20,6 +20,8 @@ from iamspy.iam import (
 from iamspy.conditions import condition_functions
 from iamspy.datatypes import parse_string
 from pydantic.json import pydantic_encoder
+from iamspy.utils import askey
+
 
 # A union set of all printable strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -344,8 +346,9 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     logger.info(f"Generating evaluation logic checks for {source} against {resource}")
     constraints = []
 
-    source_account = source.split(":")[4]
-    constraints.append(z3.String("s_account") == z3.StringVal(source_account))
+    s_account = z3.String("s_account")
+    s = z3.String("s")
+    constraints.append(s_account == z3.SubString(s, 13, 12))
     resource_account = resource.split(":")[4]
     if resource_account:
         constraints.append(z3.String("r_account") == z3.StringVal(resource_account))
@@ -377,12 +380,14 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
 
     # Identity Policy
     identity_identifier = f"identity_{source}"
-    identity_check = z3.Bool(identity_identifier)
-    constraints.append(z3.Bool("identity") == identity_check)
-    constraints.append(z3.Bool(f"identity_{source}_deny") == True)  # noqa: E712
-    if identity_identifier not in model_vars:
+    identity_check = z3.And(z3.Bool(identity_identifier), z3.Bool(f"identity_{source}_deny"))
+    if source and identity_identifier not in model_vars:
         constraints.append(identity_check == False)  # noqa: E712
+    if not source:
+        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"{x}_deny"), s == x[9:]) for x in model_vars if x[:8] == 'identity' and x[-6:] != '_allow' and x[-5:] != '_deny']
+        identity_check = z3.Or(*identity_identifiers)
 
+    constraints.append(z3.Bool("identity") == identity_check)
     # Boundary Policy
 
     # Session Policy
