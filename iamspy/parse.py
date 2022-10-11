@@ -20,8 +20,6 @@ from iamspy.iam import (
 from iamspy.conditions import condition_functions
 from iamspy.datatypes import parse_string
 from pydantic.json import pydantic_encoder
-from iamspy.utils import askey
-
 
 # A union set of all printable strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
@@ -381,10 +379,15 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     # Identity Policy
     identity_identifier = f"identity_{source}"
     identity_check = z3.And(z3.Bool(identity_identifier), z3.Bool(f"identity_{source}_deny"))
-    if source and identity_identifier not in model_vars:
-        constraints.append(identity_check == False)  # noqa: E712
-    if not source:
-        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"{x}_deny"), s == x[9:]) for x in model_vars if x[:8] == 'identity' and x[-6:] != '_allow' and x[-5:] != '_deny']
+    if source:
+        if identity_identifier not in model_vars:
+            constraints.append(identity_check == False)  # noqa: E712
+        source_account = source.split(":")[4]
+        constraints.append(z3.String("s_account") == z3.StringVal(source_account))
+    else:
+        identities = [x for x in model_vars if x.startswith('identity') and not x.endswith('_allow') and not x.endswith('_deny')]
+        identities = [x for x in identities if len(x.split(':')) > 4 and (x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))] 
+        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"{x}_deny"), s == x[9:], z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
         identity_check = z3.Or(*identity_identifiers)
 
     constraints.append(z3.Bool("identity") == identity_check)

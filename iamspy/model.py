@@ -206,7 +206,9 @@ class Model:
                 s = z3.String('s')
                 m = solver.model()
                 source = m[s]
-                sources.append(source)
+                # breakpoint()
+
+                sources.append(str(source)[1:-1])
                 solver.add(s != source)
                 sat = solver.check() == z3.sat
             return sources
