@@ -184,7 +184,10 @@ class Model:
         conditions: List[str] = [],
         condition_file: Optional[str] = None,
         strict_conditions: bool = False,
-    ) -> bool:
+    ) -> list[str]:
+        """
+        Used by the CLI to provide the who-can call.
+        """
         with self as solver:
             logger.debug("Identifying model conditions")
             model_conditions = get_conditions(self.model_vars)
@@ -199,6 +202,7 @@ class Model:
                 strict_conditions=strict_conditions,
                 model_conditions=model_conditions,
             )
+
             solver.add(*query_conditions)
             sat = solver.check() == z3.sat
             sources = []
@@ -206,8 +210,6 @@ class Model:
                 s = z3.String('s')
                 m = solver.model()
                 source = m[s]
-                # breakpoint()
-
                 sources.append(str(source)[1:-1])
                 solver.add(s != source)
                 sat = solver.check() == z3.sat
