@@ -344,8 +344,9 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     logger.info(f"Generating evaluation logic checks for {source} against {resource}")
     constraints = []
 
-    source_account = source.split(":")[4]
-    constraints.append(z3.String("s_account") == z3.StringVal(source_account))
+    s_account = z3.String("s_account")
+    s = z3.String("s")
+    constraints.append(s_account == z3.SubString(s, 13, 12))
     resource_account = resource.split(":")[4]
     if resource_account:
         constraints.append(z3.String("r_account") == z3.StringVal(resource_account))
@@ -377,12 +378,19 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
 
     # Identity Policy
     identity_identifier = f"identity_{source}"
-    identity_check = z3.Bool(identity_identifier)
-    constraints.append(z3.Bool("identity") == identity_check)
-    constraints.append(z3.Bool(f"identity_{source}_deny") == True)  # noqa: E712
-    if identity_identifier not in model_vars:
-        constraints.append(identity_check == False)  # noqa: E712
+    identity_check = z3.And(z3.Bool(identity_identifier), z3.Bool(f"identity_{source}_deny"))
+    if source:
+        if identity_identifier not in model_vars:
+            constraints.append(identity_check == False)  # noqa: E712
+        source_account = source.split(":")[4]
+        constraints.append(z3.String("s_account") == z3.StringVal(source_account))
+    else:
+        identities = [x for x in model_vars if x.startswith('identity') and not x.endswith('_allow') and not x.endswith('_deny')]
+        identities = [x for x in identities if len(x.split(':')) > 4 and (x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))] 
+        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"{x}_deny"), s == x.lstrip("identity_"), z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
+        identity_check = z3.Or(*identity_identifiers)
 
+    constraints.append(z3.Bool("identity") == identity_check)
     # Boundary Policy
 
     # Session Policy

@@ -49,6 +49,27 @@ def can_i(
 
     print(m.can_i(source_arn, action, resource, conditions, condition_file, strict_conditions))
 
+@app.command()
+def who_can(
+    action: str = typer.Argument(...),
+    resource: str = typer.Argument(...),
+    conditions: List[str] = typer.Option([], "-c", help="List of conditions as key=value string pairs"),
+    condition_file: Optional[str] = typer.Option(
+        None, "-C", help="File of conditions to load following IAM condition syntax"
+    ),
+    strict_conditions: bool = typer.Option(
+        False, help="Whether to require conditions to be passed in for any IAM condition checks"
+    ),
+    model: str = typer.Option("model.smt2", "-f"),
+):
+    """
+    Pulls out applicable policies, runs who_can
+    """
+    m = Model()
+    if Path(model).is_file():
+        m.load_model(model)
+
+    print("\n".join(m.who_can(action, resource, conditions, condition_file, strict_conditions)))
 
 @app.callback()
 def main(verbose: int = typer.Option(0, "--verbose", "-v", count=True)):
