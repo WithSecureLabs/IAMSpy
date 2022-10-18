@@ -41,6 +41,12 @@ This model exposes the following to allow use of IAMSpy:
   - `condition_file` - Filename of a conditions file following the format of conditions within a statement block to add further constraints on the request, such as specifying non string conditions or providing multiple values such as a date greater than a set time
   - `strict_conditions` - Boolean to enable inputted conditions are set as provided, and all other conditions explicitly as not provided. Setting this prevents IAMSpy enabling and setting conditions to get an action accepted without it being specified in the earlier statements.
 
+- `model.who_can(action, resource, conditions=[], condition_file=None, strict_conditions=False)`
+
+  Returns all users or roles who are able to perform `action` on the `resource`. `resource` must be a fully qualified ARN
+
+  Optional paramaters are the same as for the `can-i` method.
+
 ### CLI
 
 IAMSpy comes with a light-weight CLI wrapper around its main library entrypoints, once installed this is available as the `iamspy` application. `--help` should help with identifying available calls and parameters in a pinch. The various commands are detailed below:
@@ -75,6 +81,22 @@ iamspy can-i arn:aws:iam::123456789012:user/bob s3:GetObject arn:aws:s3:::bucket
 
 # By default, IAMSpy will attempt to set input conditions as needed to get a statement through the model and allowed. This may involve setting conditions automatically as required by policies observed. If this behavious is not desired, --strict-conditions should be set
 iamspy can-i arn:aws:iam::123456789012:user/bob s3:GetObject arn:aws:s3:::bucket/object --strict-conditions
+```
+
+Queries can also be made with the `who-can` subcommand.
+
+```bash
+# Queries take an IAM action and a resource ARN and return a list of User or Role arns which have permission to perform the action on the resource
+iamspy who-can s3:GetObject arn:aws:s3:::bucket/object
+
+# As with the can-i method. Condition values can be done with the "-c" parameter (see 'can-i' subcommand)
+iamspy who-can s3:GetObject arn:aws:s3:::bucket/object -c aws:referer=bobby.tables
+
+# Condition statements can be loaded with the -C parameter (see 'can-i' subcommand)
+iamspy who-can s3:GetObject arn:aws:s3:::bucket/object -C conditions.json
+
+# Automatic setting of conditions can be disabled with --strict-conditions (see 'can-i' subcommand)
+iamspy who-can s3:GetObject arn:aws:s3:::bucket/object --strict-conditions
 ```
 
 ## Development
