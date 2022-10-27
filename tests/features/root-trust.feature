@@ -7,7 +7,7 @@ Feature: Root Trust
 				"Resource": "*"
 			}]
 
-	Scenario: Request made after DateLessThan time
+	Scenario: Same account AssumeRole request.
 		Given I have the resource arn:aws:iam::111111111111:role/target with the trust policy:
 			[{
 				"Effect": "Allow",
