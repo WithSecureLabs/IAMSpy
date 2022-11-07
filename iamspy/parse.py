@@ -24,7 +24,6 @@ from pydantic.json import pydantic_encoder
 # A union set of all printable strings
 CHARSET = string.ascii_letters + string.digits + string.punctuation
 ANY = z3.Union(*[z3.Re(x) for x in CHARSET])
-
 logger = logging.getLogger("iamspy.parse")
 
 used_conditions = set()
@@ -163,8 +162,8 @@ def _parse_document(document: Document, identifier: str):
     doc = z3.Bool(identifier)
     # doc_allow and doc_deny are to allow querying later on for
     # what documents allow or deny what and where
-    doc_allow = z3.Bool(f"{identifier}_allow")
-    doc_deny = z3.Bool(f"{identifier}_deny")
+    doc_allow = z3.Bool(f"allow_{identifier}")
+    doc_deny = z3.Bool(f"deny_{identifier}")
 
     for stmt in document.Statement:
         parsed = _parse_statement(stmt)
@@ -189,7 +188,7 @@ def _parse_group(data: AuthorizationDetails, group: GroupDetail):
 
     for inline_policy in group.GroupPolicyList:
         logger.info(f"Parsing inline {group.Arn}_{inline_policy.PolicyName}")
-        identifier = f"identity_{group.Arn}_{inline_policy.PolicyName}"
+        identifier = f"policy_identity_{group.Arn}_{inline_policy.PolicyName}"
         model.extend(_parse_document(inline_policy.PolicyDocument, identifier))
         identifiers.append(identifier)
         testing.add(identifier)
@@ -201,11 +200,11 @@ def _parse_group(data: AuthorizationDetails, group: GroupDetail):
 
     testing.add(f"identity_{group.Arn}")
     g = z3.Bool(f"identity_{group.Arn}")
-    group_allow = z3.Bool(f"identity_{group.Arn}_allow")
-    group_deny = z3.Bool(f"identity_{group.Arn}_deny")
+    group_allow = z3.Bool(f"allow_identity_{group.Arn}")
+    group_deny = z3.Bool(f"deny_identity_{group.Arn}")
 
-    identifiers_allow = [z3.Bool(f"{x}_allow") for x in identifiers]
-    identifiers_deny = [z3.Bool(f"{x}_deny") for x in identifiers]
+    identifiers_allow = [z3.Bool(f"allow_{x}") for x in identifiers]
+    identifiers_deny = [z3.Bool(f"deny_{x}") for x in identifiers]
 
     model.extend(
         (
@@ -227,7 +226,7 @@ def _parse_role(data: AuthorizationDetails, role: RoleDetail):
 
     for inline_policy in role.RolePolicyList:
         logger.info(f"Parsing inline {role.Arn}_{inline_policy.PolicyName}")
-        identifier = f"identity_{role.Arn}_{inline_policy.PolicyName}"
+        identifier = f"policy_identity_{role.Arn}_{inline_policy.PolicyName}"
         model.extend(_parse_document(inline_policy.PolicyDocument, identifier))
         identifiers.append(identifier)
         testing.add(identifier)
@@ -239,11 +238,11 @@ def _parse_role(data: AuthorizationDetails, role: RoleDetail):
 
     testing.add(f"identity_{role.Arn}")
     r = z3.Bool(f"identity_{role.Arn}")
-    role_allow = z3.Bool(f"identity_{role.Arn}_allow")
-    role_deny = z3.Bool(f"identity_{role.Arn}_deny")
+    role_allow = z3.Bool(f"allow_identity_{role.Arn}")
+    role_deny = z3.Bool(f"deny_identity_{role.Arn}")
 
-    identifiers_allow = [z3.Bool(f"{x}_allow") for x in identifiers]
-    identifiers_deny = [z3.Bool(f"{x}_deny") for x in identifiers]
+    identifiers_allow = [z3.Bool(f"allow_{x}") for x in identifiers]
+    identifiers_deny = [z3.Bool(f"deny_{x}") for x in identifiers]
 
     model.extend(parse_resource_policy(role.Arn, role.AssumeRolePolicyDocument))
 
@@ -265,7 +264,7 @@ def _parse_user(data: AuthorizationDetails, user: UserDetail):
     identifiers = []
 
     for inline_policy in user.UserPolicyList:
-        identifier = f"identity_{user.Arn}_{inline_policy.PolicyName}"
+        identifier = f"policy_identity_{user.Arn}_{inline_policy.PolicyName}"
         model.extend(_parse_document(inline_policy.PolicyDocument, identifier))
         identifiers.append(identifier)
         testing.add(identifier)
@@ -281,11 +280,11 @@ def _parse_user(data: AuthorizationDetails, user: UserDetail):
 
     testing.add(f"identity_{user.Arn}")
     u = z3.Bool(f"identity_{user.Arn}")
-    user_allow = z3.Bool(f"identity_{user.Arn}_allow")
-    user_deny = z3.Bool(f"identity_{user.Arn}_deny")
+    user_allow = z3.Bool(f"allow_identity_{user.Arn}")
+    user_deny = z3.Bool(f"deny_identity_{user.Arn}")
 
-    identifiers_allow = [z3.Bool(f"{x}_allow") for x in identifiers]
-    identifiers_deny = [z3.Bool(f"{x}_deny") for x in identifiers]
+    identifiers_allow = [z3.Bool(f"allow_{x}") for x in identifiers]
+    identifiers_deny = [z3.Bool(f"deny_{x}") for x in identifiers]
 
     model.extend(
         (
@@ -361,13 +360,13 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
     resource_identifier = f"resource_{resource}"
     resource_check = z3.Bool(resource_identifier)
     constraints.append(z3.Bool("resource") == resource_check)
-    constraints.append(z3.Bool(f"resource_{resource}_deny") == True)  # noqa: E712
+    constraints.append(z3.Bool(f"deny_resource_{resource}") == True)  # noqa: E712
     if resource.startswith("arn:aws:s3:::") and "/" in resource:
         bucket_resource = resource.split("/")[0]
         logger.info(f"Associating {bucket_resource} policy with bucket object {resource}")
         constraints.append(z3.Bool(f"resource_{resource}") == z3.Bool(f"resource_{bucket_resource}"))
-        constraints.append(z3.Bool(f"resource_{resource}_allow") == z3.Bool(f"resource_{bucket_resource}_allow"))
-        constraints.append(z3.Bool(f"resource_{resource}_deny") == z3.Bool(f"resource_{bucket_resource}_deny"))
+        constraints.append(z3.Bool(f"allow_resource_{resource}") == z3.Bool(f"allow_resource_{bucket_resource}"))
+        constraints.append(z3.Bool(f"deny_resource_{resource}") == z3.Bool(f"deny_resource_{bucket_resource}"))
         constraints.append(
             z3.String(f"resource_{resource}_account") == z3.String(f"resource_{bucket_resource}_account")
         )
@@ -378,16 +377,19 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
 
     # Identity Policy
     identity_identifier = f"identity_{source}"
-    identity_check = z3.And(z3.Bool(identity_identifier), z3.Bool(f"identity_{source}_deny"))
+    identity_check = z3.And(z3.Bool(identity_identifier), z3.Bool(f"deny_identity_{source}"))
     if source:
         if identity_identifier not in model_vars:
             constraints.append(identity_check == False)  # noqa: E712
         source_account = source.split(":")[4]
         constraints.append(z3.String("s_account") == z3.StringVal(source_account))
     else:
-        identities = [x for x in model_vars if x.startswith('identity') and not x.endswith('_allow') and not x.endswith('_deny')]
-        identities = [x for x in identities if len(x.split(':')) > 4 and (x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))] 
-        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"{x}_deny"), s == x.lstrip("identity_"), z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
+        identities = [x for x in model_vars if x.startswith(
+            'identity') and not x.startswith('allow_') and not x.startswith('deny_')]
+        identities = [x for x in identities if len(x.split(':')) > 4 and (
+            x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))]
+        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"deny_{x}"), s == x.lstrip(
+            "identity_"), z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
         identity_check = z3.Or(*identity_identifiers)
 
     constraints.append(z3.Bool("identity") == identity_check)
