@@ -5,9 +5,8 @@ import string
 import z3
 from dateutil.parser import parse
 
-# A union set of all printable strings
-CHARSET = string.ascii_letters + string.digits + string.punctuation
-ANY = z3.Union(*[z3.Re(x) for x in CHARSET])
+# equivalient to chars in  string.ascii_letters + string.digits + string.punctuation
+ANY = z3.Range('!', '~')
 
 logger = logging.getLogger("iamspy.datatypes")
 

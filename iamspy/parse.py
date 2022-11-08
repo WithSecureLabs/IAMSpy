@@ -21,9 +21,8 @@ from iamspy.conditions import condition_functions
 from iamspy.datatypes import parse_string
 from pydantic.json import pydantic_encoder
 
-# A union set of all printable strings
-CHARSET = string.ascii_letters + string.digits + string.punctuation
-ANY = z3.Union(*[z3.Re(x) for x in CHARSET])
+# equivalient to chars in  string.ascii_letters + string.digits + string.punctuation
+ANY = z3.Range('!', '~')
 logger = logging.getLogger("iamspy.parse")
 
 used_conditions = set()
