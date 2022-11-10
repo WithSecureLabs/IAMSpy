@@ -383,8 +383,7 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
         source_account = source.split(":")[4]
         constraints.append(z3.String("s_account") == z3.StringVal(source_account))
     else:
-        identities = [x for x in model_vars if x.startswith(
-            'identity') and not x.startswith('allow_') and not x.startswith('deny_')]
+        identities = [x for x in model_vars if x.startswith('identity')]
         identities = [x for x in identities if len(x.split(':')) > 4 and (
             x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))]
         identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"deny_{x}"), s == x.lstrip(
