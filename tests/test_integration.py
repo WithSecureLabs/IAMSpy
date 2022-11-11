@@ -127,7 +127,7 @@ def test_can_i(files, inp, out):
                 "lambda:InvokeFunction",
                 "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
             ),
-            set(['arn:aws:iam::123456789012:role/name','arn:aws:iam::123456789012:role/name_policy']),
+            set(['arn:aws:iam::123456789012:role/name']),
         ),
         (
               {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-allow-testing.json"]},
@@ -136,7 +136,7 @@ def test_can_i(files, inp, out):
                 "s3:ListBucket",
                 "arn:aws:s3:::bucket",
             ),
-            set(['arn:aws:iam::111111111111:role/testing', 'arn:aws:iam::111111111111:role/testing2_policy','arn:aws:iam::111111111111:role/testing2']),
+            set(['arn:aws:iam::111111111111:role/testing', 'arn:aws:iam::111111111111:role/testing2']),
         ),
         (
          {"gaads": ["basic-allow.json"], "resources": ["cross-account-rp.json"]},
@@ -144,7 +144,7 @@ def test_can_i(files, inp, out):
                 "lambda:InvokeFunction",
                 "arn:aws:lambda:eu-west-1:111111111111:function:helloworld",
             ),
-            set(['arn:aws:iam::123456789012:role/name_policy', 'arn:aws:iam::123456789012:role/name'])
+            set(['arn:aws:iam::123456789012:role/name'])
         ),
         (
             {"gaads": ["allow-with-conditions.json"]},
@@ -152,7 +152,7 @@ def test_can_i(files, inp, out):
                 "lambda:InvokeFunction",
                 "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
             ),
-             set(['arn:aws:iam::123456789012:role/name_policy', 'arn:aws:iam::123456789012:role/name'])
+             set(['arn:aws:iam::123456789012:role/name'])
         ),
         (
             {"gaads": ["allow-with-conditions.json"]},
@@ -172,7 +172,7 @@ def test_can_i(files, inp, out):
                 "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
                 ["aws:referer=bobby.tables"],
             ),
-            set(['arn:aws:iam::123456789012:role/name_policy', 'arn:aws:iam::123456789012:role/name'])
+            set(['arn:aws:iam::123456789012:role/name'])
         ),
         (
             {"gaads": ["allow-with-conditions.json"]},
@@ -183,7 +183,7 @@ def test_can_i(files, inp, out):
                 None,
                 True,
             ),
-            set(['arn:aws:iam::123456789012:role/name_policy', 'arn:aws:iam::123456789012:role/name'])
+            set(['arn:aws:iam::123456789012:role/name'])
         ),
         (
             {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-allow-testing.json"]},
@@ -191,7 +191,7 @@ def test_can_i(files, inp, out):
                 "s3:ListBucket",
                 "arn:aws:s3:::bucket",
             ),
-            set(['arn:aws:iam::111111111111:role/testing','arn:aws:iam::111111111111:role/testing2', 'arn:aws:iam::111111111111:role/testing2_policy'])
+            set(['arn:aws:iam::111111111111:role/testing','arn:aws:iam::111111111111:role/testing2'])
         ),
         (
             {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-deny-testing2.json"]},
@@ -199,7 +199,7 @@ def test_can_i(files, inp, out):
                 "s3:ListBucket",
                 "arn:aws:s3:::bucket",
             ),
-            set([ 'arn:aws:iam::111111111111:role/testing2_policy'])
+            set([])
         ),
     ]
 )
