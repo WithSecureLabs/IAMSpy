@@ -1,0 +1,70 @@
+{
+  "UserDetailList": [
+    {
+      "Path": "/",
+      "UserName": "PermissionBoundaryAllow",
+      "UserId": "AIDAVWL35FZVHZV533DSN",
+      "Arn": "arn:aws:iam::123456789012:user/PermissionBoundaryAllow",
+      "CreateDate": "2023-01-11T11:56:48+00:00",
+      "GroupList": [],
+      "UserPolicyList": [
+        {
+          "PolicyName": "policy",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "lambda:InvokeFunction"
+                ],
+                "Resource": "*"
+              }
+            ]
+          }
+        }
+      ],
+      "AttachedManagedPolicies": [],
+      "PermissionsBoundary": {
+        "PermissionsBoundaryType": "Policy",
+        "PermissionsBoundaryArn": "arn:aws:iam::aws:policy/InvokingAllowed"
+      }
+    }
+  ],
+  "GroupDetailList": [],
+  "RoleDetailList": [],
+  "Policies": [
+    {
+      "PolicyName": "InvokingAllowed",
+      "PolicyId": "ANPAVWL35FZVMLTEEJSKU",
+      "Arn": "arn:aws:iam::aws:policy/InvokingAllowed",
+      "Path": "/",
+      "DefaultVersionId": "v1",
+      "AttachmentCount": 0,
+      "PermissionsBoundaryUsageCount": 0,
+      "IsAttachable": true,
+      "CreateDate": "2023-01-09T12:44:05Z",
+      "UpdateDate": "2023-01-09T12:44:05Z",
+      "PolicyVersionList": [
+        {
+          "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "Administrator",
+                "Effect": "Allow",
+                "Action": [
+                  "*"
+                ],
+                "Resource": "*"
+              }
+            ]
+          },
+          "VersionId": "v1",
+          "IsDefaultVersion": true,
+          "CreateDate": "2023-01-09T12:44:05Z"
+        }
+      ]
+    }
+  ]
+}

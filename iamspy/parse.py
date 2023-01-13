@@ -155,6 +155,7 @@ def _parse_document(document: Document, identifier: str):
     """
     Parse an IAM document of multiple statement
     """
+    # Conditions for a request to be allowed and denied respectively
     allow = []
     deny = []
     logger.info(f"Parsing policy document: {identifier}")
@@ -243,13 +244,23 @@ def _parse_role(data: AuthorizationDetails, role: RoleDetail):
     identifiers_allow = [z3.Bool(f"allow_{x}") for x in identifiers]
     identifiers_deny = [z3.Bool(f"deny_{x}") for x in identifiers]
 
-    model.extend(parse_resource_policy(role.Arn, role.AssumeRolePolicyDocument))
+    permissions_boundary = z3.Bool(f"permissions_boundary_{role.Arn}")
+    # Permissions boundaries never allow - they only deny if the policy does not allow
 
+    if role.PermissionsBoundary:
+        assert f"identity_{role.PermissionsBoundary.PermissionsBoundaryArn}" in testing
+        permissions_boundary_constraint = (
+                permissions_boundary ==
+                z3.Bool(f"identity_{role.PermissionsBoundary.PermissionsBoundaryArn}")
+        )
+        model.append(permissions_boundary_constraint)
+
+    model.extend(parse_resource_policy(role.Arn, role.AssumeRolePolicyDocument))
     model.extend(
         (
-            r == z3.And(role_allow, role_deny),
+            r == z3.And(role_allow, role_deny, permissions_boundary),
             role_allow == z3.Or(*identifiers_allow),
-            role_deny == z3.And(*identifiers_deny),
+            role_deny == z3.And(*identifiers_deny)
         )
     )
     return model
@@ -285,11 +296,21 @@ def _parse_user(data: AuthorizationDetails, user: UserDetail):
     identifiers_allow = [z3.Bool(f"allow_{x}") for x in identifiers]
     identifiers_deny = [z3.Bool(f"deny_{x}") for x in identifiers]
 
+    permissions_boundary = z3.Bool(f"permissions_boundary_{user.Arn}")
+    # Permissions boundaries never allow - they only deny if the policy does not allow
+    if user.PermissionsBoundary:
+        assert f"identity_{user.PermissionsBoundary.PermissionsBoundaryArn}" in testing
+        permissions_boundary_constraint = (
+                permissions_boundary ==
+                z3.Bool(f"identity_{user.PermissionsBoundary.PermissionsBoundaryArn}")
+        )
+        model.append(permissions_boundary_constraint)
+
     model.extend(
         (
-            u == z3.And(user_allow, user_deny),
+            u == z3.And(user_allow, user_deny, permissions_boundary),
             user_allow == z3.Or(*identifiers_allow),
-            user_deny == z3.And(*identifiers_deny),
+            user_deny == z3.And(*identifiers_deny)
         )
     )
     return model
@@ -350,9 +371,6 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
         constraints.append(z3.String("r_account") == z3.StringVal(resource_account))
     else:
         constraints.append(z3.String("r_account") == z3.String(f"resource_{resource}_account"))
-
-    # Explicit Deny
-
     # SCPs
 
     # Resource Policy
