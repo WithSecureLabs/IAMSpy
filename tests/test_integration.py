@@ -7,6 +7,60 @@ import pytest
     "files,inp,out",
     [
         (
+            {"gaads": ["role-boundary-no-policies.json"]},
+            (
+                    "arn:aws:iam::123456789012:role/name",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            False,
+        ),
+        (
+            {"gaads": ["user-allow-check.json"]},
+            (
+                    "arn:aws:iam::123456789012:user/PermissionBoundaryAllow",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            True,
+        ),
+        (
+            {"gaads": ["user-boundary-allow.json"]},
+            (
+                    "arn:aws:iam::123456789012:user/PermissionBoundaryAllow",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            True,
+        ),
+        (
+            {"gaads": ["user-boundary-deny.json"]},
+            (
+                    "arn:aws:iam::123456789012:user/name",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            False,
+        ),
+        (
+            {"gaads": ["role-boundary-allow.json"]},
+            (
+                    "arn:aws:iam::123456789012:role/name",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            True,
+        ),
+        (
+            {"gaads": ["role-boundary-deny.json"]},
+            (
+                    "arn:aws:iam::123456789012:role/name",
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            False,
+        ),
+        (
             {"gaads": ["basic-deny.json"]},
             (
                 "arn:aws:iam::123456789012:role/name",
@@ -121,6 +175,54 @@ def test_can_i(files, inp, out):
 @pytest.mark.parametrize(
     "files,inp,out",
     [
+        (
+            {"gaads": ["role-boundary-no-policies.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set([]),
+        ),
+        (
+            {"gaads": ["user-allow-check.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set(['arn:aws:iam::123456789012:user/PermissionBoundaryAllow']),
+        ),
+        (
+            {"gaads": ["user-boundary-allow.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set(['arn:aws:iam::123456789012:user/PermissionBoundaryAllow']),
+        ),
+        (
+            {"gaads": ["user-boundary-deny.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set(),
+        ),
+        (
+            {"gaads": ["role-boundary-allow.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set(['arn:aws:iam::123456789012:role/name']),
+        ),
+        (
+            {"gaads": ["role-boundary-deny.json"]},
+            (
+                    "lambda:InvokeFunction",
+                    "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            set(),
+        ),
         (
             {"gaads": ["basic-allow.json"]},
             (
