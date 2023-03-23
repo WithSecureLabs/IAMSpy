@@ -411,6 +411,11 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
         identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"deny_{x}"), s == x.lstrip(
             "identity_"), z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
         identity_check = z3.Or(*identity_identifiers)
+        # TODO: This is a temporary fix for whocan, at some point need to expand this to do automatic wildcard resolution
+        # for accounts external to known
+        constraints.append(
+            z3.Or(*[parse_string(s, x.lstrip("identity_"), wildcard=False, case_sensitive=True) for x in identities])
+        )
 
     constraints.append(z3.Bool("identity") == identity_check)
     # Boundary Policy

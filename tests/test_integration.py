@@ -310,9 +310,17 @@ def test_can_i(files, inp, out):
                 "s3:ListBucket",
                 "arn:aws:s3:::bucket",
             ),
-            set([])
+            set([]),
         ),
-    ]
+        (
+            {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-allow-all.json"]},
+            (
+                "s3:ListBucket",
+                "arn:aws:s3:::bucket",
+            ),
+            set(["arn:aws:iam::111111111111:role/testing", "arn:aws:iam::111111111111:role/testing2"]),
+        ),
+    ],
 )
 def test_who_can(files, inp, out):
     m = Model()
