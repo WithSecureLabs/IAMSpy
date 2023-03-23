@@ -90,7 +90,7 @@ class Model:
     def hash(self):
         return hashlib.md5(self.solver.to_smt2().encode()).hexdigest()
 
-    def generate_evaluation_logic_checks(self, source, resource):
+    def generate_evaluation_logic_checks(self, source: Optional[str], resource: str):
         """
         Generate the assertions for the model
         """
@@ -98,19 +98,22 @@ class Model:
 
     def _generate_query_conditions(
         self,
-        source: str,
+        source: Optional[str],
         action: str,
         resource: str,
-        conditions: List[str] = [],
+        conditions: Optional[List[str]] = None,
         condition_file: Optional[str] = None,
         strict_conditions: bool = False,
         model_conditions: Set[str] = set(),
     ):
+        if conditions is None:
+            conditions = []
+
         output = self.generate_evaluation_logic_checks(source, resource)
 
         s, a, r = z3.Strings("s a r")
 
-        if source != None:
+        if source is not None:
             logger.debug(f"Adding constraint source is {source}")
             output.append(parse_string(s, source, wildcard=False))
         logger.debug(f"Adding constraint action is {action}")
@@ -153,6 +156,7 @@ class Model:
         conditions: List[str] = [],
         condition_file: Optional[str] = None,
         strict_conditions: bool = False,
+        debug: bool = False,
     ) -> bool:
         """
         Used by the CLI to provide the can-i call.
@@ -174,8 +178,10 @@ class Model:
 
             solver.add(*query_conditions)
 
-            return solver.check() == z3.sat
-
+            if debug:
+                return solver
+            else:
+                return solver.check() == z3.sat
 
     def who_can(
         self,
@@ -207,7 +213,7 @@ class Model:
             sat = solver.check() == z3.sat
             sources = []
             while sat:
-                s = z3.String('s')
+                s = z3.String("s")
                 m = solver.model()
                 source = m[s]
                 sources.append(str(source)[1:-1])
