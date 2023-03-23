@@ -114,10 +114,14 @@ def _parse_statement(statement: Statements):
     if statement.Principal:
         # AWS Principals can not use wildcards
         # https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html
+        # except to specify All Principals
         # TODO: Makes these into an z3.Or
         if "AWS" in statement.Principal:
             items = []
             for principal in statement.Principal["AWS"]:
+                if principal == "*":
+                    items.append(True)
+                    continue
                 if re.match(r"[0-9]{12}", principal):
                     principal = f"arn:aws:iam::{principal}:root"
                 try:

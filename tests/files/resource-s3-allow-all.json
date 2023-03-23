@@ -1,0 +1,18 @@
+[
+    {
+        "Resource": "arn:aws:s3:::bucket",
+        "Policy": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Sid": "",
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "*",
+                    "Resource": "*"
+                }
+            ]
+        },
+        "Account": "111111111111"
+    }
+]
