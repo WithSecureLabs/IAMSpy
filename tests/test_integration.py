@@ -157,6 +157,15 @@ import pytest
             ),
             False,
         ),
+        (
+            {"gaads": ["assume-role-just-trust.json"]},
+            (
+                "arn:aws:iam::111111111111:role/role-assuming",
+                "sts:AssumeRole",
+                "arn:aws:iam::111111111111:role/role-to-assume",
+            ),
+            False,
+        ),
     ],
 )
 def test_can_i(files, inp, out):
