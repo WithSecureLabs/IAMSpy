@@ -22,7 +22,7 @@ from iamspy.datatypes import parse_string
 from pydantic.json import pydantic_encoder
 
 # equivalient to chars in  string.ascii_letters + string.digits + string.punctuation
-ANY = z3.Range('!', '~')
+ANY = z3.Range("!", "~")
 logger = logging.getLogger("iamspy.parse")
 
 used_conditions = set()
@@ -253,9 +253,8 @@ def _parse_role(data: AuthorizationDetails, role: RoleDetail):
 
     if role.PermissionsBoundary:
         assert f"identity_{role.PermissionsBoundary.PermissionsBoundaryArn}" in testing
-        permissions_boundary_constraint = (
-                permissions_boundary ==
-                z3.Bool(f"identity_{role.PermissionsBoundary.PermissionsBoundaryArn}")
+        permissions_boundary_constraint = permissions_boundary == z3.Bool(
+            f"identity_{role.PermissionsBoundary.PermissionsBoundaryArn}"
         )
         model.append(permissions_boundary_constraint)
 
@@ -264,7 +263,7 @@ def _parse_role(data: AuthorizationDetails, role: RoleDetail):
         (
             r == z3.And(role_allow, role_deny, permissions_boundary),
             role_allow == z3.Or(*identifiers_allow),
-            role_deny == z3.And(*identifiers_deny)
+            role_deny == z3.And(*identifiers_deny),
         )
     )
     return model
@@ -304,9 +303,8 @@ def _parse_user(data: AuthorizationDetails, user: UserDetail):
     # Permissions boundaries never allow - they only deny if the policy does not allow
     if user.PermissionsBoundary:
         assert f"identity_{user.PermissionsBoundary.PermissionsBoundaryArn}" in testing
-        permissions_boundary_constraint = (
-                permissions_boundary ==
-                z3.Bool(f"identity_{user.PermissionsBoundary.PermissionsBoundaryArn}")
+        permissions_boundary_constraint = permissions_boundary == z3.Bool(
+            f"identity_{user.PermissionsBoundary.PermissionsBoundaryArn}"
         )
         model.append(permissions_boundary_constraint)
 
@@ -314,7 +312,7 @@ def _parse_user(data: AuthorizationDetails, user: UserDetail):
         (
             u == z3.And(user_allow, user_deny, permissions_boundary),
             user_allow == z3.Or(*identifiers_allow),
-            user_deny == z3.And(*identifiers_deny)
+            user_deny == z3.And(*identifiers_deny),
         )
     )
     return model
@@ -363,7 +361,7 @@ def generate_model(data: AuthorizationDetails):
     return model
 
 
-def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
+def generate_evaluation_logic_checks(model_vars, source: Optional[str], resource: str):
     logger.info(f"Generating evaluation logic checks for {source} against {resource}")
     constraints = []
 
@@ -405,11 +403,21 @@ def generate_evaluation_logic_checks(model_vars, source: str, resource: str):
         source_account = source.split(":")[4]
         constraints.append(z3.String("s_account") == z3.StringVal(source_account))
     else:
-        identities = [x for x in model_vars if x.startswith('identity')]
-        identities = [x for x in identities if len(x.split(':')) > 4 and (
-            x.split(":")[5].startswith('user') or x.split(":")[5].startswith('role'))]
-        identity_identifiers = [z3.And(z3.Bool(x), z3.Bool(f"deny_{x}"), s == x.lstrip(
-            "identity_"), z3.String("s_account") == z3.StringVal(x.split(":")[4])) for x in identities]
+        identities = [x for x in model_vars if x.startswith("identity")]
+        identities = [
+            x
+            for x in identities
+            if len(x.split(":")) > 4 and (x.split(":")[5].startswith("user") or x.split(":")[5].startswith("role"))
+        ]
+        identity_identifiers = [
+            z3.And(
+                z3.Bool(x),
+                z3.Bool(f"deny_{x}"),
+                s == x.lstrip("identity_"),
+                z3.String("s_account") == z3.StringVal(x.split(":")[4]),
+            )
+            for x in identities
+        ]
         identity_check = z3.Or(*identity_identifiers)
         # TODO: This is a temporary fix for whocan, at some point need to expand this to do automatic wildcard resolution
         # for accounts external to known
