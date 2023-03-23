@@ -157,6 +157,15 @@ import pytest
             ),
             False,
         ),
+        (
+            {"gaads": ["allow-testing-s3.json"], "resources": ["resource-s3-allow-all.json"]},
+            (
+                "arn:aws:iam::111111111111:role/testing",
+                "s3:ListBucket",
+                "arn:aws:s3:::bucket",
+            ),
+            True,
+        ),
     ],
 )
 def test_can_i(files, inp, out):
