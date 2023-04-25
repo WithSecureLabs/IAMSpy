@@ -27,6 +27,15 @@ def load_resources(resources: str = typer.Argument(...), model: str = typer.Opti
 
 
 @app.command()
+def load_scps(scps: str = typer.Argument(...), model: str = typer.Option("model.smt2", "-f")):
+    m = Model()
+    if Path(model).is_file():
+        m.load_model(model)
+    m.load_scps(scps)
+    m.save(model)
+
+
+@app.command()
 def can_i(
     source_arn: str = typer.Argument(...),
     action: str = typer.Argument(...),
@@ -49,6 +58,7 @@ def can_i(
 
     print(m.can_i(source_arn, action, resource, conditions, condition_file, strict_conditions))
 
+
 @app.command()
 def who_can(
     action: str = typer.Argument(...),
@@ -70,6 +80,7 @@ def who_can(
         m.load_model(model)
 
     print("\n".join(m.who_can(action, resource, conditions, condition_file, strict_conditions)))
+
 
 @app.callback()
 def main(verbose: int = typer.Option(0, "--verbose", "-v", count=True)):

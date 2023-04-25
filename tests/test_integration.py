@@ -166,6 +166,51 @@ import pytest
             ),
             True,
         ),
+        (
+            {"gaads": ["basic-deny.json"], "scps": ["scp-basic.json"]},
+            (
+                "arn:aws:iam::123456789012:role/name",
+                "lambda:InvokeFunction",
+                "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            False,
+        ),
+        (
+            {"gaads": ["basic-allow.json"], "scps": ["scp-basic.json"]},
+            (
+                "arn:aws:iam::123456789012:role/name",
+                "lambda:InvokeFunction",
+                "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            True,
+        ),
+        (
+            {"gaads": ["basic-allow.json"], "scps": ["scp-basic.json"]},
+            (
+                "arn:aws:iam::123456789012:role/name",
+                "lambda:InvokeFunction",
+                "arn:aws:lambda:eu-west-1:111111111111:function:helloworld",
+            ),
+            False,
+        ),
+        (
+            {"gaads": ["basic-allow.json"], "scps": ["scp-deny-lambda.json"]},
+            (
+                "arn:aws:iam::123456789012:role/name",
+                "lambda:InvokeFunction",
+                "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            False,
+        ),
+        (
+            {"gaads": ["basic-allow.json"], "scps": ["scp-deny-lambda2.json"]},
+            (
+                "arn:aws:iam::123456789012:role/name",
+                "lambda:InvokeFunction",
+                "arn:aws:lambda:eu-west-1:123456789012:function:helloworld",
+            ),
+            True,
+        ),
     ],
 )
 def test_can_i(files, inp, out):
@@ -178,6 +223,9 @@ def test_can_i(files, inp, out):
 
     for rp in files.get("resources", []):
         m.load_resource_policies(base_path / rp)
+
+    for scp in files.get("scps", []):
+        m.load_scps(base_path / scp)
 
     assert m.can_i(*inp) == out
 
@@ -332,5 +380,8 @@ def test_who_can(files, inp, out):
 
     for rp in files.get("resources", []):
         m.load_resource_policies(base_path / rp)
+
+    for scp in files.get("scps", []):
+        m.load_scps(base_path / scp)
 
     assert set(m.who_can(*inp)) == out
