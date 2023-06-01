@@ -7,9 +7,11 @@ def handle_next_token(api_call, response_key, **kwargs):
 
     results = resp[response_key]
 
-    while token := resp.get("NextToken", None):
+    token = resp.get("NextToken", None)
+    while token:
         resp = api_call(NextToken=token, **kwargs)
         results.extend(resp[response_key])
+        token = resp.get("NextToken", None)
 
     return results
 
