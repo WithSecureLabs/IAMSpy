@@ -250,7 +250,7 @@ class RootOrganization:
 
     @property
     def all_policies(self) -> List[SCPPolicy]:
-        policies = self.Policies
+        policies = list(self.Policies)
 
         for child in self.Children:
             policies += child.all_policies
