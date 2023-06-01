@@ -1,5 +1,19 @@
 import boto3
 import json
+import sys
+from functools import lru_cache
+
+DEFAULT_FILENAME = "scps.json"
+
+HELP_MESSAGE = f"""Quickly downloads an AWS Organizations OU structure and SCPs to be fed into IAMSpy
+
+Usage: python3 download-scps.py OUTPUT_FILE
+
+OUTPUT_FILE defaults to {DEFAULT_FILENAME}, however can be set to stdout by setting it to -"""
+
+
+def print_stderr(s):
+    print(s, file=sys.stderr)
 
 
 def handle_next_token(api_call, response_key, **kwargs):
@@ -23,6 +37,22 @@ def get_roots():
     return handle_next_token(client.list_roots, "Roots")
 
 
+@lru_cache
+def get_policy(policy_id):
+    return json.loads(client.describe_policy(PolicyId=policy_id)["Policy"]["Content"])
+
+
+all_accounts = {}
+
+
+def get_account(account_id):
+    if not all_accounts:
+        for account in handle_next_token(client.list_accounts, "Accounts"):
+            all_accounts[account["Id"]] = account
+
+    return all_accounts[account_id]
+
+
 def get_policies(target_id):
     policies = handle_next_token(
         client.list_policies_for_target,
@@ -32,15 +62,14 @@ def get_policies(target_id):
     )
 
     for policy in policies:
-        policy["Content"] = json.loads(
-            client.describe_policy(PolicyId=policy["Id"])["Policy"]["Content"],
-        )
+        policy["Content"] = get_policy(policy["Id"])
 
     return policies
 
 
 def get_children(parent):
     parent_id = parent["Id"]
+    print_stderr(f"Fetching data for {parent_id}")
     ous = handle_next_token(
         client.list_children,
         "Children",
@@ -68,7 +97,7 @@ def get_children(parent):
         ous = [{**x, "Type": "OU"} for x in ous]
 
     if accounts:
-        accounts = [client.describe_account(AccountId=x["Id"])["Account"] for x in accounts]
+        accounts = [get_account(x["Id"]) for x in accounts]
         accounts = [{**x, "Policies": get_policies(x["Id"]), "Type": "Account"} for x in accounts]
 
     resp["Children"] = ous + accounts
@@ -76,4 +105,20 @@ def get_children(parent):
     return resp
 
 
-print(json.dumps(get_children(get_roots()[0]), indent=4, default=str))
+if len(sys.argv) < 2:
+    print_stderr(f"No output filename given, defaulting to {DEFAULT_FILENAME}")
+    filename = DEFAULT_FILENAME
+else:
+    filename = sys.argv[1]
+    if sys.argv[1] in ["-h", "--help"]:
+        print_stderr(HELP_MESSAGE)
+        sys.exit()
+
+output = get_children(get_roots()[0])
+
+if filename == "-":
+    file = sys.stdout
+else:
+    file = open(filename, "w")
+
+json.dump(output, file, indent=4, default=str)
