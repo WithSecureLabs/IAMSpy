@@ -1,0 +1,81 @@
+{
+    "Id": "r-abcd",
+    "Arn": "arn:aws:organizations::123456789012:root/o-abcdefghij/r-abcd",
+    "Name": "Root",
+    "PolicyTypes": [
+        {
+            "Type": "SERVICE_CONTROL_POLICY",
+            "Status": "ENABLED"
+        }
+    ],
+    "Policies": [
+        {
+            "Id": "p-FullAWSAccess",
+            "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-FullAWSAccess",
+            "Name": "FullAWSAccess",
+            "Description": "Allows access to every operation",
+            "Type": "SERVICE_CONTROL_POLICY",
+            "AwsManaged": true,
+            "Content": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": "*",
+                        "Resource": "*"
+                    }
+                ]
+            }
+        },
+        {
+            "Id": "p-ab12cd34",
+            "Arn": "arn:aws:organizations::123456789012:policy/o-abcdefghij/service_control_policy/p-ab12cd34",
+            "Name": "block lambda",
+            "Description": "block lambda",
+            "Type": "SERVICE_CONTROL_POLICY",
+            "AwsManaged": false,
+            "Content": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Deny",
+                        "Action": "lambda:*",
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }
+    ],
+    "Children": [
+        {
+            "Id": "123456789012",
+            "Arn": "arn:aws:organizations::123456789012:account/o-abcdefghij/123456789012",
+            "Email": "test@test.com",
+            "Name": "test",
+            "Status": "ACTIVE",
+            "JoinedMethod": "INVITED",
+            "JoinedTimestamp": "2020-01-01 00:00:00.000000+00:00",
+            "Policies": [
+                {
+                    "Id": "p-FullAWSAccess",
+                    "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-FullAWSAccess",
+                    "Name": "FullAWSAccess",
+                    "Description": "Allows access to every operation",
+                    "Type": "SERVICE_CONTROL_POLICY",
+                    "AwsManaged": true,
+                    "Content": {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": "*",
+                                "Resource": "*"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "Type": "Account"
+        }
+    ]
+}

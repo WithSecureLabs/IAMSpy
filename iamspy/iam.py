@@ -1,6 +1,7 @@
 """
 Classes representing IAM documents
 """
+from __future__ import annotations
 from pydantic import Field, validator
 from pydantic.dataclasses import dataclass
 from datetime import datetime
@@ -175,6 +176,95 @@ class ResourcePolicy:
     Resource: str
     Policy: Document
     Account: Optional[str] = Field(None)
+
+
+@dataclass
+class SCPPolicy:
+    Id: str
+    Arn: str
+    Name: str
+    Description: str
+    Type: str
+    AwsManaged: bool
+    Content: Document
+
+
+@dataclass
+class OrganizationAccount:
+    Id: str
+    Arn: str
+    Email: str
+    Name: str
+    Status: str
+    JoinedMethod: str
+    JoinedTimestamp: datetime
+    Policies: List[SCPPolicy]
+    Type: str = Field(..., regex="^Account$")
+
+    @property
+    def all_policies(self) -> List[SCPPolicy]:
+        return self.Policies
+
+    @property
+    def all_children(self) -> List[OrganizationAccount]:
+        return [self]
+
+
+@dataclass
+class OrganizationUnit:
+    Id: str
+    Arn: str
+    Name: str
+    Policies: List[SCPPolicy]
+    Children: List[Union[OrganizationUnit, OrganizationAccount]]
+    Type: str = Field(..., regex="^OU$")
+
+    @property
+    def all_policies(self) -> List[SCPPolicy]:
+        policies = self.Policies
+
+        for child in self.Children:
+            policies += child.all_policies
+
+        return policies
+
+    @property
+    def all_children(self) -> List[Union[OrganizationAccount, OrganizationUnit]]:
+        children = [self]
+
+        for child in self.Children:
+            children += child.all_children
+
+        return children
+
+
+@dataclass
+class RootOrganization:
+    Id: str
+    Arn: str
+    Name: str
+    PolicyTypes: List[Dict[str, str]]
+    Policies: List[SCPPolicy]
+    Children: List[Union[OrganizationUnit, OrganizationAccount]]
+    Type: str = "Root"
+
+    @property
+    def all_policies(self) -> List[SCPPolicy]:
+        policies = list(self.Policies)
+
+        for child in self.Children:
+            policies += child.all_policies
+
+        return policies
+
+    @property
+    def all_children(self) -> List[Union[RootOrganization, OrganizationAccount, OrganizationUnit]]:
+        children: List[Union[RootOrganization, OrganizationAccount, OrganizationUnit]] = [self]
+
+        for child in self.Children:
+            children += child.all_children
+
+        return children
 
 
 def extract_applicable_policies(data: AuthorizationDetails, source_arn: str) -> List[Document]:

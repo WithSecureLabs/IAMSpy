@@ -3,7 +3,7 @@ import logging
 import json
 import z3
 import hashlib
-from iamspy.iam import AuthorizationDetails, ResourcePolicy
+from iamspy.iam import AuthorizationDetails, ResourcePolicy, RootOrganization
 from iamspy import parse
 from iamspy.datatypes import parse_string
 from iamspy.utils import get_conditions, get_vars
@@ -60,6 +60,16 @@ class Model:
         policies = [ResourcePolicy(**item) for item in json.load(open(filename))]
         for policy in policies:
             self.solver.add(*parse.parse_resource_policy(policy.Resource, policy.Policy, policy.Account))
+        self._model_vars = None
+
+    def load_scps(self, filename: str) -> None:
+        """
+        Load SCPs in from a JSON file
+        """
+        org = RootOrganization(**json.load(open(filename)))
+
+        self.solver.add(*parse.parse_scps(org))
+
         self._model_vars = None
 
     @property

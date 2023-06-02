@@ -16,6 +16,7 @@ from iamspy.iam import (
     Effects,
     AuthorizationDetails,
     UserDetail,
+    RootOrganization,
 )
 from iamspy.conditions import condition_functions
 from iamspy.datatypes import parse_string
@@ -328,6 +329,59 @@ def parse_resource_policy(arn: str, doc: Document, account_id: Optional[str] = N
         parse_string(z3.String(f"resource_{arn}_account"), account_id),
         *_parse_document(doc, f"resource_{arn}"),
     ]
+
+
+def account_parents(ou, chain):
+    if ou.Type == "Account":
+        yield [*chain, ou.Id]
+    else:
+        for x in ou.Children:
+            yield from account_parents(x, [*chain, ou.Id])
+
+
+def parse_scps(org: RootOrganization):
+    policies = set()
+    master_account = org.Arn.split(":")[4]
+
+    constraints = []
+
+    # Load all policies
+    for policy in org.all_policies:
+        if policy.Id in policies:
+            continue
+
+        constraints.extend(_parse_document(policy.Content, f"scp_{policy.Id}"))
+        policies.add(policy.Id)
+
+    # Generate individual levels
+    for child in org.all_children:
+        pols = [f"scp_{x.Id}" for x in child.Policies]
+        identifiers_allow = [z3.Bool(f"allow_{x}") for x in pols]
+        identifiers_deny = [z3.Bool(f"deny_{x}") for x in pols]
+        scp = z3.Bool(f"scp_{child.Id}")
+        scp_allow = z3.Bool(f"allow_scp_{child.Id}")
+        scp_deny = z3.Bool(f"deny_scp_{child.Id}")
+        constraints.extend(
+            (
+                scp == z3.And(scp_allow, scp_deny),
+                scp_allow == z3.Or(*identifiers_allow),
+                scp_deny == z3.And(*identifiers_deny),
+            )
+        )
+
+    s_account = z3.String("s_account")
+    # Apply levels to each member account
+    for account_chain in account_parents(org, []):
+        # Skips organization master
+        if master_account == account_chain[-1]:
+            continue
+        scp = z3.Bool(f"scp_final_{account_chain[-1]}")
+        identifiers = [z3.Bool(f"scp_{x}") for x in account_chain]
+
+        constraints.append(scp == z3.And(*identifiers))
+        constraints.append(z3.Or(s_account != z3.StringVal(account_chain[-1]), scp))
+
+    return constraints
 
 
 testing = set()
