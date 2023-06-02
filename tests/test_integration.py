@@ -1,4 +1,4 @@
-from iamspy import Model
+from zeuscloud_iamspy import Model
 import pathlib
 import pytest
 

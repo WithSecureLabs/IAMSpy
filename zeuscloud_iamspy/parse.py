@@ -8,7 +8,7 @@ from pprint import pformat
 import re
 import string
 from typing import List, Any, Union, Dict, Optional
-from iamspy.iam import (
+from zeuscloud_iamspy.iam import (
     Document,
     GroupDetail,
     RoleDetail,
@@ -17,8 +17,8 @@ from iamspy.iam import (
     AuthorizationDetails,
     UserDetail,
 )
-from iamspy.conditions import condition_functions
-from iamspy.datatypes import parse_string
+from zeuscloud_iamspy.conditions import condition_functions
+from zeuscloud_iamspy.datatypes import parse_string
 from pydantic.json import pydantic_encoder
 
 # equivalient to chars in  string.ascii_letters + string.digits + string.punctuation
@@ -27,6 +27,10 @@ logger = logging.getLogger("iamspy.parse")
 
 used_conditions = set()
 
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 def json_encoder(obj: Any, nested=True) -> Any:
     """
@@ -67,7 +71,7 @@ def _parse_condition(conditions: Dict[str, Dict[str, Union[str, List[str]]]]):
             )
             continue
         if if_exists := test.endswith("IfExists"):
-            test = test.removesuffix("IfExists")
+            test = remove_suffix(test, "IfExists")
         for key, value in variables.items():
             logger.debug(f"Variable key: {key}, value: {value}")
             used_conditions.add(key)

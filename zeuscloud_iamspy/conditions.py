@@ -1,7 +1,7 @@
 import logging
 import z3
 
-from iamspy.datatypes import convert
+from zeuscloud_iamspy.datatypes import convert
 
 logger = logging.getLogger("iamspy.conditions")
 

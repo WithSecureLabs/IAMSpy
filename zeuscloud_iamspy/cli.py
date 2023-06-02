@@ -1,9 +1,9 @@
 import logging
 from typing import List, Optional
 import typer
-from iamspy.model import Model
+from zeuscloud_iamspy.model import Model
 from pathlib import Path
-from iamspy.log_config import build_logger
+from zeuscloud_iamspy.log_config import build_logger
 
 app = typer.Typer()
 

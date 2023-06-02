@@ -1,12 +1,13 @@
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 import logging
 import json
+import os
 import z3
 import hashlib
-from iamspy.iam import AuthorizationDetails, ResourcePolicy
-from iamspy import parse
-from iamspy.datatypes import parse_string
-from iamspy.utils import get_conditions, get_vars
+from zeuscloud_iamspy.iam import AuthorizationDetails, ResourcePolicy
+from zeuscloud_iamspy import parse
+from zeuscloud_iamspy.datatypes import parse_string
+from zeuscloud_iamspy.utils import get_conditions, get_vars
 
 
 logger = logging.getLogger("iamspy.model")
@@ -47,7 +48,10 @@ class Model:
         Returns a python object representation of the JSON doc, after adding
         the model to the Z3 solver.
         """
-        auth_details = AuthorizationDetails(**json.load(open(filename)))
+        return self.load_gaad_json(json.load(open(filename)))
+
+    def load_gaad_json(self, gaad_json: Dict) -> AuthorizationDetails:
+        auth_details = AuthorizationDetails(**gaad_json)
         conditions = parse.generate_model(auth_details)
         self.solver.add(*conditions)
         self._model_vars = None
@@ -57,7 +61,10 @@ class Model:
         """
         Load resource policies in from a JSON file
         """
-        policies = [ResourcePolicy(**item) for item in json.load(open(filename))]
+        return self.load_resource_policies_json(json.load(open(filename)))
+
+    def load_resource_policies_json(self, resource_policies_json: List) -> AuthorizationDetails:
+        policies = [ResourcePolicy(**item) for item in resource_policies_json]
         for policy in policies:
             self.solver.add(*parse.parse_resource_policy(policy.Resource, policy.Policy, policy.Account))
         self._model_vars = None
@@ -190,7 +197,7 @@ class Model:
         conditions: List[str] = [],
         condition_file: Optional[str] = None,
         strict_conditions: bool = False,
-    ) -> list[str]:
+    ) -> List[str]:
         """
         Used by the CLI to provide the who-can call.
         """
