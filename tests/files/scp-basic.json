@@ -39,9 +39,9 @@
             "JoinedTimestamp": "2020-01-01 00:00:00.000000+00:00",
             "Policies": [
                 {
-                    "Id": "p-FullAWSAccess",
-                    "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-FullAWSAccess",
-                    "Name": "FullAWSAccess",
+                    "Id": "p-BlockAWSAccess",
+                    "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-BlockAWSAccess",
+                    "Name": "BlockAWSAccess",
                     "Description": "Allows access to every operation",
                     "Type": "SERVICE_CONTROL_POLICY",
                     "AwsManaged": true,
@@ -49,7 +49,7 @@
                         "Version": "2012-10-17",
                         "Statement": [
                             {
-                                "Effect": "Allow",
+                                "Effect": "Deny",
                                 "Action": "*",
                                 "Resource": "*"
                             }
