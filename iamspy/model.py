@@ -29,16 +29,22 @@ class Model:
         """
         Save a generated Z3 model to a file
         """
-        output = self.solver.to_smt2()
+        output = {"model": self.solver.to_smt2(), "vars": list(self.model_vars)}
         with open(filename, "w") as fs:
-            fs.write(output)
+            json.dump(output, fs)
 
     def load_model(self, filename: str):
         """
         Load an existing Z3 model from a file.
         """
-        self.solver.from_file(filename)
-        self._model_vars = None
+        try:
+            with open(filename) as fs:
+                data = json.load(fs)
+            self.solver.from_string(data["model"])
+            self._model_vars = set(data["vars"])
+        except json.JSONDecodeError:
+            self.solver.from_file(filename)
+            self._model_vars = None
 
     def load_gaad(self, filename: str) -> AuthorizationDetails:
         """
@@ -73,26 +79,25 @@ class Model:
         self._model_vars = None
 
     @property
-    def model_vars(self):
+    def model_vars(self) -> Set[str]:
         # Try loading from file
         if self._model_vars is None:
             try:
                 with open("model.vars") as fs:
+                    logger.warn("model.vars has now been deprecated, please re-save the model and delete this file")
                     data = fs.read()
                     h, v = data.split("\n", 1)
                     if h == self.hash:
                         logger.info("Loading model vars from model.vars")
                         self._model_vars = set(v.split("\n"))
+                    else:
+                        logger.info("model.vars hash does not match current model")
             except FileNotFoundError:
                 pass
 
         # Re-generate the model vars
         if self._model_vars is None:
             self._model_vars = get_vars(list(self.solver.assertions()))
-            with open("model.vars", "w") as fs:
-                logger.info("Saving model vars to model.vars")
-                fs.write(self.hash + "\n")
-                fs.write("\n".join(list(self._model_vars)))
 
         return self._model_vars
 
