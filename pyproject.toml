@@ -7,7 +7,7 @@ authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 z3-solver = "*"
-pydantic = "*"
+pydantic = "^1"
 typer = "*"
 python-dateutil = "^2.8.2"
 
