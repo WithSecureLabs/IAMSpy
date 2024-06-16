@@ -82,6 +82,33 @@ def who_can(
     print("\n".join(m.who_can(action, resource, conditions, condition_file, strict_conditions)))
 
 
+@app.command()
+def who_can_batch_resource(
+    action: str = typer.Argument(...),
+    resources_file: str = typer.Argument(...),
+    conditions: List[str] = typer.Option([], "-c", help="List of conditions as key=value string pairs"),
+    condition_file: Optional[str] = typer.Option(
+        None, "-C", help="File of conditions to load following IAM condition syntax"
+    ),
+    strict_conditions: bool = typer.Option(
+        False, help="Whether to require conditions to be passed in for any IAM condition checks"
+    ),
+    model: str = typer.Option("model.smt2", "-f"),
+):
+    """
+    Pulls out applicable policies, runs who_can
+    """
+    m = Model()
+    if Path(model).is_file():
+        m.load_model(model)
+
+    with open(resources_file) as fs:
+        resources = fs.read().strip().split("\n")
+
+    for source, resource in m.who_can_batch_resource(action, resources, conditions, condition_file, strict_conditions):
+        print(f"{source} can perform {action} on {resource}")
+
+
 @app.callback()
 def main(verbose: int = typer.Option(0, "--verbose", "-v", count=True)):
     """

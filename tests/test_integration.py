@@ -385,3 +385,45 @@ def test_who_can(files, inp, out):
         m.load_scps(base_path / scp)
 
     assert set(m.who_can(*inp)) == out
+
+
+@pytest.mark.parametrize(
+    "files,inp,out",
+    [
+        (
+            {"gaads": ["batch-allow.json"], "resources": ["batch-resource.json"]},
+            (
+                "s3:GetObject",
+                [
+                    "arn:aws:s3:::bucket1/foo",
+                    "arn:aws:s3:::bucket2/foo",
+                    "arn:aws:s3:::bucket3/foo",
+                    "arn:aws:s3:::bucket4/foo",
+                ],
+            ),
+            set(
+                [
+                    ("arn:aws:iam::123456789012:role/name1", "arn:aws:s3:::bucket1/foo"),
+                    ("arn:aws:iam::123456789012:role/name1", "arn:aws:s3:::bucket2/foo"),
+                    ("arn:aws:iam::123456789012:role/name2", "arn:aws:s3:::bucket2/foo"),
+                    ("arn:aws:iam::123456789012:role/name3", "arn:aws:s3:::bucket4/foo"),
+                ]
+            ),
+        )
+    ],
+)
+def test_who_can_batch_resource(files, inp, out):
+    m = Model()
+
+    base_path = pathlib.Path(__file__).parent / "files"
+
+    for gaad in files.get("gaads", []):
+        m.load_gaad(base_path / gaad)
+
+    for rp in files.get("resources", []):
+        m.load_resource_policies(base_path / rp)
+
+    for scp in files.get("scps", []):
+        m.load_scps(base_path / scp)
+
+    assert set(m.who_can_batch_resource(*inp)) == out

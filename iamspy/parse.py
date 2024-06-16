@@ -415,38 +415,60 @@ def generate_model(data: AuthorizationDetails):
     return model
 
 
-def generate_evaluation_logic_checks(model_vars, source: Optional[str], resource: str):
-    logger.info(f"Generating evaluation logic checks for {source} against {resource}")
+def generate_evaluation_logic_checks(model_vars, source: Optional[str], resources: List[str]):
+    logger.info(f"Generating evaluation logic checks for {source} against {resources}")
     constraints = []
 
     s_account = z3.String("s_account")
     s = z3.String("s")
+    r = z3.String("r")
     constraints.append(s_account == z3.SubString(s, 13, 12))
-    resource_account = resource.split(":")[4]
-    if resource_account:
-        constraints.append(z3.String("r_account") == z3.StringVal(resource_account))
-    else:
-        constraints.append(z3.String("r_account") == z3.String(f"resource_{resource}_account"))
+    for resource in resources:
+        resource_account = resource.split(":")[4]
+        if resource_account:
+            constraints.append(
+                z3.Or(
+                    z3.Not(parse_string(r, resource, wildcard=False)),
+                    z3.String("r_account") == z3.StringVal(resource_account),
+                )
+            )
+        else:
+            constraints.append(
+                z3.Or(
+                    z3.Not(parse_string(r, resource, wildcard=False)),
+                    z3.String("r_account") == z3.String(f"resource_{resource}_account"),
+                )
+            )
     # SCPs
 
     # Resource Policy
-    resource_identifier = f"resource_{resource}"
-    resource_check = z3.Bool(resource_identifier)
-    constraints.append(z3.Bool("resource") == resource_check)
-    constraints.append(z3.Bool(f"deny_resource_{resource}") == True)  # noqa: E712
-    if resource.startswith("arn:aws:s3:::") and "/" in resource:
-        bucket_resource = resource.split("/")[0]
-        logger.info(f"Associating {bucket_resource} policy with bucket object {resource}")
-        constraints.append(z3.Bool(f"resource_{resource}") == z3.Bool(f"resource_{bucket_resource}"))
-        constraints.append(z3.Bool(f"allow_resource_{resource}") == z3.Bool(f"allow_resource_{bucket_resource}"))
-        constraints.append(z3.Bool(f"deny_resource_{resource}") == z3.Bool(f"deny_resource_{bucket_resource}"))
+    resource_check = z3.Bool("resource")
+    for resource in resources:
+        resource_identifier = f"resource_{resource}"
+        resource_specific_check = z3.Bool(resource_identifier)
         constraints.append(
-            z3.String(f"resource_{resource}_account") == z3.String(f"resource_{bucket_resource}_account")
+            z3.Or(
+                z3.Not(parse_string(r, resource, wildcard=False)),
+                resource_check == resource_specific_check,
+            )
         )
-        resource_identifier = f"resource_{bucket_resource}"
-    if resource_identifier not in model_vars:
-        logger.debug(f"Missing resource policy for {resource_identifier}, defaulting to False")
-        constraints.append(resource_check == False)  # noqa: E712
+        # TODO: Figure this out
+        constraints.append(z3.Bool(f"deny_resource_{resource}") == True)  # noqa: E712
+        if resource.startswith("arn:aws:s3:::") and "/" in resource:
+            bucket_resource = resource.split("/")[0]
+            logger.info(f"Associating {bucket_resource} policy with bucket object {resource}")
+            constraints.append(z3.Bool(f"resource_{resource}") == z3.Bool(f"resource_{bucket_resource}"))
+            constraints.append(z3.Bool(f"allow_resource_{resource}") == z3.Bool(f"allow_resource_{bucket_resource}"))
+            constraints.append(z3.Bool(f"deny_resource_{resource}") == z3.Bool(f"deny_resource_{bucket_resource}"))
+            constraints.append(
+                z3.String(f"resource_{resource}_account") == z3.String(f"resource_{bucket_resource}_account")
+            )
+            resource_identifier = f"resource_{bucket_resource}"
+        if resource_identifier not in model_vars:
+            logger.debug(f"Missing resource policy for {resource_identifier}, defaulting to False")
+            constraints.append(resource_specific_check == False)  # noqa: E712
+
+    constraints.append(z3.Or(*[parse_string(r, x, wildcard=False) for x in resources]))
 
     # Identity Policy
     identity_identifier = f"identity_{source}"
@@ -464,7 +486,8 @@ def generate_evaluation_logic_checks(model_vars, source: Optional[str], resource
             if len(x.split(":")) > 4 and (x.split(":")[5].startswith("user") or x.split(":")[5].startswith("role"))
         ]
         identity_identifiers = [
-            z3.And(
+            z3.Bool(f"test_identity_{x}")
+            == z3.And(
                 z3.Bool(x),
                 z3.Bool(f"deny_{x}"),
                 s == x.lstrip("identity_"),
@@ -472,7 +495,9 @@ def generate_evaluation_logic_checks(model_vars, source: Optional[str], resource
             )
             for x in identities
         ]
-        identity_check = z3.Or(*identity_identifiers)
+        # identity_check = z3.Or(*identity_identifiers)
+        constraints.extend(identity_identifiers)
+        identity_check = z3.Or(*[z3.Bool(f"test_identity_{x}") for x in identities])
         # TODO: This is a temporary fix for whocan, at some point need to expand this to do automatic wildcard resolution
         # for accounts external to known
         constraints.append(

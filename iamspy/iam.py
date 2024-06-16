@@ -93,6 +93,21 @@ class Tag:
 
 
 @dataclass
+class AccessKey:
+    UserName: str
+    AccessKeyId: str
+    Status: str
+    CreateDate: datetime
+
+
+@dataclass
+class LoginProfile:
+    UserName: str
+    CreateDate: datetime
+    PasswordResetRequired: bool
+
+
+@dataclass
 class UserDetail:
     Path: str
     UserName: str
@@ -100,8 +115,11 @@ class UserDetail:
     Arn: str
     CreateDate: datetime
     UserPolicyList: List[Policy] = Field(default_factory=list)
+    PasswordLastUsed: Optional[datetime] = None
     GroupList: List[str] = Field(default_factory=list)
     AttachedManagedPolicies: List[ManagedPolicy] = Field(default_factory=list)
+    LoginProfile: Optional[LoginProfile] = None
+    AccessKeys: Optional[List[AccessKey]] = None
     PermissionsBoundary: Optional[PermissionBoundary] = None
     Tags: List[Tag] = Field(default_factory=list)
 

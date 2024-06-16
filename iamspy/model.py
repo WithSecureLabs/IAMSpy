@@ -1,4 +1,4 @@
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Union, Tuple
 import logging
 import json
 import z3
@@ -105,17 +105,20 @@ class Model:
     def hash(self):
         return hashlib.md5(self.solver.to_smt2().encode()).hexdigest()
 
-    def generate_evaluation_logic_checks(self, source: Optional[str], resource: str):
+    def generate_evaluation_logic_checks(self, source: Optional[str], resource: Union[str, List[str]]):
         """
         Generate the assertions for the model
         """
+        if isinstance(resource, str):
+            resource = [resource]
+
         return parse.generate_evaluation_logic_checks(self.model_vars, source, resource)
 
     def _generate_query_conditions(
         self,
         source: Optional[str],
         action: str,
-        resource: str,
+        resource: Union[str, List[str]],
         conditions: Optional[List[str]] = None,
         condition_file: Optional[str] = None,
         strict_conditions: bool = False,
@@ -123,6 +126,9 @@ class Model:
     ):
         if conditions is None:
             conditions = []
+
+        if isinstance(resource, str):
+            resource = [resource]
 
         output = self.generate_evaluation_logic_checks(source, resource)
 
@@ -134,7 +140,7 @@ class Model:
         logger.debug(f"Adding constraint action is {action}")
         logger.debug(f"Adding constraint resource is {resource}")
         output.append(parse_string(a, action, wildcard=False))
-        output.append(parse_string(r, resource, wildcard=False))
+        output.append(z3.Or(*[parse_string(r, x, wildcard=False) for x in resource]))
 
         provided_conditions = set()
 
@@ -224,6 +230,8 @@ class Model:
                 model_conditions=model_conditions,
             )
 
+            logger.debug("Adding generated query conditions")
+            # solver.set(threads=4)
             solver.add(*query_conditions)
             sat = solver.check() == z3.sat
             sources = []
@@ -231,7 +239,48 @@ class Model:
                 s = z3.String("s")
                 m = solver.model()
                 source = m[s]
+                logger.debug(f"Found {source} as a potential candidate")
                 sources.append(str(source)[1:-1])
                 solver.add(s != source)
                 sat = solver.check() == z3.sat
             return sources
+
+    def who_can_batch_resource(
+        self,
+        action: str,
+        resources: List[str],
+        conditions: List[str] = [],
+        condition_file: Optional[str] = None,
+        strict_conditions: bool = False,
+    ) -> List[Tuple[str, str]]:
+        with self as solver:
+            logger.debug("Identifying model conditions")
+            model_conditions = get_conditions(self.model_vars)
+            logger.debug(f"Model conditions identified as: {model_conditions}")
+
+            query_conditions = self._generate_query_conditions(
+                source=None,
+                action=action,
+                resource=resources,
+                conditions=conditions,
+                condition_file=condition_file,
+                strict_conditions=strict_conditions,
+                model_conditions=model_conditions,
+            )
+
+            logger.debug("Adding generated query conditions")
+            solver.set(threads=4)
+            solver.add(*query_conditions)
+            sat = solver.check() == z3.sat
+            results = []
+            while sat:
+                s = z3.String("s")
+                r = z3.String("r")
+                m = solver.model()
+                source = m[s]
+                resource = m[r]
+                logger.debug(f"Found {source} as a potential candidate for {resource}")
+                results.append((str(source)[1:-1], str(resource)[1:-1]))
+                solver.add(z3.Not(z3.And(s == source, r == resource)))
+                sat = solver.check() == z3.sat
+            return results
