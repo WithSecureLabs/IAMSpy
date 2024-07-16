@@ -72,6 +72,8 @@ def _parse_condition(conditions: Dict[str, Dict[str, Union[str, List[str]]]]):
         for key, value in variables.items():
             logger.debug(f"Variable key: {key}, value: {value}")
             used_conditions.add(key)
+            if isinstance(value, bool):
+                value = "true" if value else "false"
             if not isinstance(value, list):
                 value = [value]
             items.append(condition_functions[test](f"condition_{key}", value, if_exists=if_exists))

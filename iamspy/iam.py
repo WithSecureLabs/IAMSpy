@@ -24,7 +24,7 @@ class Statements:
     NotAction: Optional[Union[str, List[str]]] = None
     Resource: Optional[Union[str, List[str]]] = None
     NotResource: Optional[Union[str, List[str]]] = None
-    Condition: Optional[Dict[str, Dict[str, Union[str, List[str]]]]] = None
+    Condition: Optional[Dict[str, Dict[str, Union[str, bool, List[str]]]]] = None
 
     @validator("Principal", pre=True)
     def principal_is_list(cls, v):
