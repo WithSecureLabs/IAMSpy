@@ -243,7 +243,7 @@ class Model:
                 sources.append(str(source)[1:-1])
                 solver.add(s != source)
                 sat = solver.check() == z3.sat
-            return sources
+                yield str(source)[1:-1]
 
     def who_can_batch_resource(
         self,

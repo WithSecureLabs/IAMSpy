@@ -79,7 +79,8 @@ def who_can(
     if Path(model).is_file():
         m.load_model(model)
 
-    print("\n".join(m.who_can(action, resource, conditions, condition_file, strict_conditions)))
+    for x in m.who_can(action, resource, conditions, condition_file, strict_conditions):
+        print(x)
 
 
 @app.command()
